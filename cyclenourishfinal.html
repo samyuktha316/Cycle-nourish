@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CycleNourish · Personalized Cycle Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6"></script>
+  <style>
+    :root { color-scheme: light dark; }
+    .phase-menstrual {background:#fee2e2!important;border-left:4px solid #ef4444!important;}
+    .phase-follicular {background:#fef9c3!important;border-left:4px solid #facc15!important;}
+    .phase-ovulation {background:#dcfce7!important;border-left:4px solid #22c55e!important;}
+    .phase-luteal {background:#ddd6fe!important;border-left:4px solid #6366f1!important;}
+    .calendar-day .phase-dot {width:10px;height:10px;border-radius:9999px;display:inline-block;margin-right:4px;}
+    .phase-dot.menstrual {background:#ef4444;}
+    .phase-dot.follicular {background:#facc15;}
+    .phase-dot.ovulation {background:#22c55e;}
+    .phase-dot.luteal {background:#6366f1;}
+    .dark-mode {background:#0f172a!important;color:#f8fafc!important;}
+    .dark-mode .bg-white {background:#1e293b!important;color:#f8fafc!important;}
+    .dark-mode .bg-gradient-to-b {background:#0f172a!important;}
+    .dark-mode input,.dark-mode textarea,.dark-mode select {background:#334155!important;color:#f8fafc!important;}
+    .dark-mode .calendar-day {background:#1e293b!important;color:#e2e8f0!important;}
+    .dark-mode .rounded-2xl,.dark-mode .rounded-xl {background:#1e253f!important;}
+    .dark-mode .border {border-color:#475569!important;}
+    @media (max-width: 768px) {.hide-mobile {display:none;}}
+    .food-tag {display:inline-block;padding:2px 8px;margin:2px;border-radius:9999px;font-size:0.7rem;background:#f1f5f9;color:#475569;}
+    .food-tag.highlight {background:#facc15;color:#1f2937;}
+    .craving-badge {animation:pulse 2.2s infinite;}
+    @keyframes pulse {0%,100%{opacity:1;}50%{opacity:0.65;}}
+    .voice-active {box-shadow:0 0 0 2px #f472b6 inset;}
+    .badge {display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:9999px;font-size:0.7rem;background:#f3f4f6;color:#1f2937;font-weight:600;}
+    .dark-mode .badge {background:#1f2937;color:#f8fafc;}
+    .tag-pill {padding:6px 10px;border-radius:9999px;background:#eef2ff;color:#3730a3;font-size:0.75rem;margin:0 6px 6px 0;display:inline-flex;align-items:center;gap:6px;}
+    .dark-mode .tag-pill {background:#312e81;color:#c7d2fe;}
+    .achievement-card {background:rgba(249,168,212,0.2);border-left:4px solid #f472b6;padding:12px;border-radius:10px;}
+    .dark-mode .achievement-card {background:rgba(244,114,182,0.25);}
+    .chat-bubble {background:#f9fafb;border-radius:16px;padding:10px 14px;margin-bottom:10px;}
+    .dark-mode .chat-bubble {background:#1f2937;}
+    .icon-btn {display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;background:#e0e7ff;color:#3730a3;font-weight:600;font-size:0.85rem;}
+    .icon-btn:hover {background:#c7d2fe;}
+    .dark-mode .icon-btn {background:#312e81;color:#c7d2fe;}
+  </style>
+</head>
+<body class="bg-gradient-to-b from-pink-50 via-purple-50 to-slate-50 min-h-screen font-sans text-slate-800" id="pageBody">
+  <header class="py-4 flex flex-wrap justify-between items-center px-4 lg:px-6 max-w-6xl mx-auto gap-3">
+    <div class="flex gap-3 items-center">
+      <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/fc614ed3-755c-466a-86f1-e971f54b60c6.png" class="w-12 h-12 rounded-lg shadow" alt="CycleNourish logo">
+      <div>
+        <h1 class="text-xl font-extrabold tracking-tight">CycleNourish</h1>
+        <p class="text-xs uppercase tracking-wide text-pink-500 font-semibold">Personalized Cycle Intelligence</p>
+      </div>
+    </div>
+    <div class="flex gap-2 items-center">
+      <div id="authButtons" class="flex gap-2">
+        <button onclick="openLoginModal()" class="px-3 py-2 rounded-lg bg-white border"><i class="fa-solid fa-right-to-bracket mr-1"></i>Login</button>
+        <button onclick="openSignupModal()" class="px-3 py-2 rounded-lg bg-pink-500 text-white"><i class="fa-solid fa-user-plus mr-1"></i>Sign Up</button>
+      </div>
+      <div id="profileMenu" class="hidden relative">
+        <button onclick="toggleProfileMenu()" class="px-3 py-2 rounded-lg bg-white border flex items-center gap-2">
+          <img id="navAvatar" class="w-6 h-6 rounded-full object-cover" src="" alt="">
+          <span id="navUserName">Profile</span>
+          <i class="fa-solid fa-caret-down"></i>
+        </button>
+        <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg z-50">
+          <button onclick="openProfileModal()" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-user-pen mr-2"></i>Edit Profile</button>
+          <button onclick="openPartnerModalSettings()" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-user-group mr-2"></i>Partner Settings</button>
+          <button onclick="openNotificationsSettings()" class="w-full text-left px-4 py-2 hover:bg-slate-50"><i class="fa-solid fa-bell mr-2"></i>Notifications</button>
+          <button onclick="logout()" class="w-full text-left px-4 py-2 hover:bg-slate-50 text-red-600"><i class="fa-solid fa-right-from-bracket mr-2"></i>Logout</button>
+        </div>
+      </div>
+      <select id="languageSelector" class="px-3 py-2 rounded-lg border text-sm">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="hi">हिन्दी</option>
+      </select>
+      <button id="voiceToggleBtn" class="px-3 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200"><i class="fa-solid fa-microphone"></i></button>
+      <button onclick="toggleDarkMode()" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-300"><i class="fa-solid fa-moon"></i></button>
+      <button onclick="showPartnerModal()" class="px-3 py-2 rounded-lg bg-blue-100 text-blue-700"><i class="fa-solid fa-user-group"></i></button>
+    </div>
+  </header>
+
+  <!-- Auth Gate -->
+  <section id="authGate" class="max-w-3xl mx-auto px-4 pb-10 hidden">
+    <div class="bg-white rounded-2xl shadow p-6 text-center">
+      <h2 class="text-xl font-semibold mb-2">Welcome to CycleNourish</h2>
+      <p class="text-sm text-slate-600 mb-4">Please log in or create an account to access your personalized dashboard.</p>
+      <div class="flex gap-2 justify-center">
+        <button onclick="openLoginModal()" class="px-4 py-2 rounded-xl bg-white border"><i class="fa-solid fa-right-to-bracket mr-2"></i>Login</button>
+        <button onclick="openSignupModal()" class="px-4 py-2 rounded-xl bg-pink-500 text-white"><i class="fa-solid fa-user-plus mr-2"></i>Sign Up</button>
+      </div>
+      <div class="mt-4 text-xs text-slate-500">Social login coming soon (Google, Facebook).</div>
+    </div>
+  </section>
+
+  <main id="dashboard" class="container mx-auto px-3 lg:px-6 pb-12 max-w-6xl grid xl:grid-cols-[2fr_1fr] gap-6 hidden">
+    <section class="space-y-6">
+      <!-- Cycle Summary -->
+      <div class="bg-white rounded-2xl shadow-md p-5 flex flex-col lg:flex-row lg:items-center gap-4">
+        <div class="flex-1 space-y-2">
+          <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-lg flex items-center gap-2"><i class="fa-solid fa-circle-notch text-pink-500"></i> Cycle Progress</h2>
+            <span id="cycleDayBadge" class="badge bg-pink-100 text-pink-700">Day --</span>
+          </div>
+          <div id="progressBar" class="w-full h-3 rounded-full bg-gray-100 overflow-hidden">
+            <div id="progressBarFill" class="h-full bg-pink-500 transition-all duration-500 ease-out" style="width:0%;"></div>
+          </div>
+          <div class="text-xs text-slate-500 flex flex-wrap gap-3">
+            <span id="cycleDaysText"></span>
+            <span id="nextMilestoneText"></span>
+            <span id="predictionSummary"></span>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <button onclick="showSetupModal()" class="bg-pink-500 text-white px-4 py-2 rounded-xl shadow flex items-center gap-2">
+            <i class="fa-solid fa-calendar-plus"></i> Set Period Start
+          </button>
+          <button onclick="quickAddPeriod()" class="bg-rose-100 text-rose-700 px-4 py-2 rounded-xl shadow flex items-center gap-2">
+            <i class="fa-solid fa-droplet"></i> Log Period
+          </button>
+        </div>
+      </div>
+
+      <!-- Mood, Cravings, Symptom Tracker -->
+      <div class="bg-white rounded-2xl shadow-md p-6 space-y-4">
+        <div class="flex flex-wrap justify-between gap-2 items-center">
+          <h2 class="text-lg font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-heart text-pink-500"></i> How Are You Feeling?
+          </h2>
+          <div class="flex gap-2 text-xs">
+            <span class="badge"><i class="fa-solid fa-fire"></i> Energy <span id="energyBadge">--</span></span>
+            <span class="badge"><i class="fa-solid fa-face-smile"></i> Mood <span id="moodBadge">--</span></span>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Current Mood</label>
+            <select id="moodSelector" class="w-full p-2.5 border rounded-lg" onchange="handleDailyUpdate()">
+              <option value="">Select mood...</option>
+              <option value="energetic">💪 Energetic</option>
+              <option value="happy">😊 Happy</option>
+              <option value="neutral">😐 Neutral</option>
+              <option value="creative">🎨 Creative</option>
+              <option value="irritable">😠 Irritable</option>
+              <option value="tired">🥱 Tired</option>
+              <option value="anxious">😰 Anxious</option>
+              <option value="bloated">🎈 Bloated</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Current Cravings</label>
+            <select id="cravingSelector" class="w-full p-2.5 border rounded-lg" onchange="handleDailyUpdate()">
+              <option value="">Select craving...</option>
+              <option value="sweet">🍫 Sweet</option>
+              <option value="salty">🧂 Salty</option>
+              <option value="comfort">🍲 Comfort Food</option>
+              <option value="fresh">🥗 Fresh & Light</option>
+              <option value="protein">🍗 Protein Rich</option>
+              <option value="carbs">🍞 Carbs</option>
+              <option value="spicy">🌶 Spicy</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Energy Level</label>
+            <input type="range" id="energySlider" min="1" max="5" step="1" class="w-full" oninput="handleDailyUpdate()" />
+            <div class="flex justify-between text-xs text-slate-500 mt-1">
+              <span>Low</span><span>High</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Symptoms</label>
+          <div class="flex flex-wrap gap-2 text-sm" id="symptomBadges"></div>
+          <textarea id="symptomNote" class="w-full border rounded-lg p-2 mt-3 text-sm" rows="2" placeholder="Add any notes about your symptoms..." onblur="handleDailyUpdate()"></textarea>
+        </div>
+        <div id="personalizedTip" class="p-4 rounded-xl bg-purple-50 border border-purple-200 text-sm hidden">
+          <i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>
+          <span id="tipText"></span>
+        </div>
+        <div id="symptomForecast" class="text-xs text-slate-500"></div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="bg-white rounded-2xl shadow-md p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 class="text-lg font-semibold flex items-center gap-2"><i class="fa-solid fa-calendar-days text-pink-500"></i> Cycle Calendar</h2>
+          <div class="flex gap-2">
+            <button onclick="changeMonth(-1)" class="icon-btn"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+            <div id="calendarMonth" class="font-semibold tracking-wide text-sm uppercase"></div>
+            <button onclick="changeMonth(1)" class="icon-btn">Next <i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+        </div>
+        <div class="grid grid-cols-7 gap-2 text-xs text-slate-500 font-medium text-center mb-2">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-xs"></div>
+        <div class="flex flex-wrap items-center justify-between mt-4 border-t pt-3 text-xs text-slate-600 gap-3">
+          <div class="flex gap-3 flex-wrap items-center text-xs">
+            <span class="phase-dot menstrual"></span>Menstrual
+            <span class="phase-dot follicular"></span>Follicular
+            <span class="phase-dot ovulation"></span>Ovulation
+            <span class="phase-dot luteal"></span>Luteal
+          </div>
+          <div class="flex gap-2 text-xs">
+            <button onclick="sendPartnerAlert('period')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg"><i class="fa-solid fa-bell"></i> Notify Period</button>
+            <button onclick="sendPartnerAlert('fertility')" class="px-3 py-1 bg-teal-100 text-teal-700 rounded-lg"><i class="fa-solid fa-star"></i> Notify Fertility</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personalized Nutrition -->
+      <div class="bg-white rounded-2xl shadow-md p-6 space-y-5">
+        <div class="flex flex-wrap justify-between gap-3 items-center">
+          <h2 class="text-lg font-semibold flex items-center gap-2"><i class="fa-solid fa-apple-whole text-green-500"></i> Personalized Nutrition & Planner</h2>
+        </div>
+        <div id="nutrientSummary" class="flex flex-wrap gap-3 text-xs font-medium text-slate-600"></div>
+        <div id="mealsGrid" class="space-y-4"></div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="showCustomFoodModal()" class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-lg"><i class="fa-solid fa-plus mr-1"></i> Add Custom Food</button>
+          <button onclick="generateGroceryList()" class="text-sm bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg"><i class="fa-solid fa-cart-shopping mr-1"></i> Grocery List</button>
+        </div>
+        <div id="recipeSugestions" class="text-sm text-slate-600"></div>
+      </div>
+
+      <!-- Cycle-based Recommendations -->
+      <div class="bg-white rounded-2xl shadow-md p-6 grid md:grid-cols-3 gap-5">
+        <div>
+          <h3 class="font-semibold text-md mb-3 flex items-center gap-2"><i class="fa-solid fa-dumbbell text-purple-500"></i> Exercise</h3>
+          <ul id="exerciseRecommendations" class="space-y-2 text-sm"></ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-md mb-3 flex items-center gap-2"><i class="fa-solid fa-moon text-indigo-500"></i> Sleep & Recovery</h3>
+          <ul id="sleepRecommendations" class="space-y-2 text-sm"></ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-md mb-3 flex items-center gap-2"><i class="fa-solid fa-spa text-green-500"></i> Mindfulness</h3>
+          <ul id="mindfulnessRecommendations" class="space-y-2 text-sm"></ul>
+        </div>
+      </div>
+
+      <!-- Wellness Tips -->
+      <div class="bg-white rounded-2xl shadow-md p-5">
+        <h3 class="font-semibold text-md mb-2 flex gap-1 items-center"><i class="fa-solid fa-lightbulb text-yellow-500"></i> Wellness Tips</h3>
+        <div id="tipsSection" class="text-sm text-slate-700"></div>
+      </div>
+
+      <!-- Social & Support -->
+      <div class="bg-white rounded-2xl shadow-md p-6 grid lg:grid-cols-2 gap-6">
+        <div class="space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-semibold text-md flex gap-2 items-center"><i class="fa-solid fa-comments text-blue-500"></i> Community Chat</h3>
+            <button onclick="postCommunityMessage()" class="icon-btn text-xs bg-blue-100 text-blue-700"><i class="fa-solid fa-paper-plane"></i> Post</button>
+          </div>
+          <textarea id="communityMessage" rows="2" class="w-full border rounded-lg p-2 text-sm" placeholder="Share a tip, a win, or a question..."></textarea>
+          <div id="communityFeed" class="max-h-56 overflow-y-auto text-sm pr-1"></div>
+        </div>
+        <div class="space-y-4">
+          <h3 class="font-semibold text-md flex items-center gap-2"><i class="fa-solid fa-handshake text-pink-500"></i> Period Buddy Matching</h3>
+          <div id="buddyMatches" class="space-y-3 text-sm"></div>
+          <div class="bg-purple-50 rounded-xl p-4 text-xs text-purple-700 flex items-center gap-3">
+            <i class="fa-solid fa-circle-info text-purple-400 text-lg"></i>
+            <span>Matching is based on similar cycle lengths, symptom patterns, and wellness goals. Only anonymized data is shared.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications & Automation -->
+      <div class="bg-white rounded-2xl shadow-md p-6 space-y-4">
+        <h3 class="font-semibold text-md flex items-center gap-2"><i class="fa-solid fa-bell text-amber-500"></i> Notifications & Automation</h3>
+        <div class="grid md:grid-cols-2 gap-4 text-sm">
+          <div class="border rounded-xl p-4 space-y-2">
+            <h4 class="font-semibold text-sm uppercase tracking-wide text-slate-500">Reminders</h4>
+            <label class="flex items-center justify-between"><span>WhatsApp / SMS alerts</span><input type="checkbox" id="notifySms" onchange="toggleNotification('sms')" /></label>
+            <label class="flex items-center justify-between"><span>Meal reminders</span><input type="checkbox" id="notifyMeals" onchange="toggleNotification('meals')" /></label>
+            <label class="flex items-center justify-between"><span>Water intake nudges</span><input type="checkbox" id="notifyWater" onchange="toggleNotification('water')" /></label>
+            <label class="flex items-center justify-between"><span>Workout accountability</span><input type="checkbox" id="notifyWorkout" onchange="toggleNotification('workout')" /></label>
+          </div>
+          <div class="border rounded-xl p-4 space-y-2">
+            <h4 class="font-semibold text-sm uppercase tracking-wide text-slate-500">Smart Suggestions</h4>
+            <div id="aiSuggestions" class="space-y-2 text-xs text-slate-600"></div>
+            <button class="icon-btn text-xs bg-emerald-100 text-emerald-700" onclick="refreshAISuggestions()"><i class="fa-solid fa-wand-magic-sparkles"></i> Refresh Suggestions</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gamification -->
+      <div class="bg-white rounded-2xl shadow-md p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-md flex items-center gap-2"><i class="fa-solid fa-trophy text-yellow-500"></i> Streaks & Achievements</h3>
+          <span class="badge bg-yellow-100 text-yellow-700">Streak: <span id="streakCount">0</span> days</span>
+        </div>
+        <div id="achievementsGrid" class="grid md:grid-cols-3 gap-4 text-sm"></div>
+        <div class="grid md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <h4 class="font-semibold text-slate-600 mb-2">Active Challenge</h4>
+            <p id="activeChallenge"></p>
+          </div>
+          <div>
+            <h4 class="font-semibold text-slate-600 mb-2">Goals</h4>
+            <ul id="goalList" class="space-y-1"></ul>
+          </div>
+          <div>
+            <h4 class="font-semibold text-slate-600 mb-2">Rewards</h4>
+            <p id="rewardSummary"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sidebar -->
+    <aside class="space-y-6">
+      <!-- Current Cycle -->
+      <div class="bg-white rounded-2xl shadow-md p-5 space-y-3">
+        <h3 class="font-semibold text-md">Current Cycle Info</h3>
+        <div id="currentPhaseText" class="p-3 rounded-lg bg-gradient-to-r from-pink-100 to-pink-50 text-sm font-medium"></div>
+        <div class="text-xs space-y-1 text-slate-600">
+          <div>Average Cycle: <span id="avgCycleText">29 days</span></div>
+          <div>Next Period: <span id="nextPeriodText">--</span></div>
+          <div>Fertility Window: <span id="fertilityWindowText">--</span></div>
+        </div>
+        <div class="text-xs pt-3 border-t">
+          <h4 class="font-semibold text-slate-600 mb-2 flex items-center gap-2"><i class="fa-solid fa-calendar-day text-pink-400"></i> Symptom Predictions</h4>
+          <ul id="symptomPredictionList" class="space-y-1"></ul>
+        </div>
+      </div>
+
+      <!-- Trends -->
+      <div class="bg-white rounded-2xl shadow-md p-5 space-y-4">
+        <h3 class="font-semibold text-md flex items-center gap-2">Mood & Energy Trends</h3>
+        <canvas id="moodTrendChart" height="140"></canvas>
+        <canvas id="energyTrendChart" height="140"></canvas>
+      </div>
+
+      <!-- Analytics -->
+      <div class="bg-white rounded-2xl shadow-md p-5 space-y-4">
+        <h3 class="font-semibold text-md flex items-center gap-2"><i class="fa-solid fa-chart-line text-blue-600"></i> Analytics</h3>
+        <canvas id="cycleChart" height="120"></canvas>
+        <canvas id="predictChart" height="120"></canvas>
+        <canvas id="symptomChart" height="120"></canvas>
+      </div>
+
+      <!-- History -->
+      <div class="bg-white rounded-2xl shadow-md p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold">View Log</h3>
+          <div class="flex gap-2 text-xs">
+            <button onclick="exportHistoryCSV()" class="bg-purple-100 px-3 py-1 rounded text-purple-700"><i class="fa-solid fa-file-csv mr-1"></i>Export CSV</button>
+            <button onclick="clearAll()" class="text-red-500 hover:underline">Clear All</button>
+          </div>
+        </div>
+        <div id="historyList" class="space-y-3 max-h-72 overflow-y-auto text-sm pr-1"></div>
+        <div class="text-xs text-slate-500">
+          <div class="font-semibold mt-2">Partner Alerts Summary</div>
+          <div id="partnerAlertsSummary">—</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Setup Modal -->
+  <div id="setupModal" class="fixed hidden inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
+      <h3 class="text-lg font-semibold">Track Cycle Start</h3>
+      <p class="text-sm text-slate-600">Enter your last period start date and cycle length.</p>
+      <input type="date" id="startDateInput" class="w-full p-2 border rounded">
+      <input type="number" min="20" max="40" id="cycleLengthInput" class="w-full p-2 border rounded" placeholder="Average cycle length (days)">
+      <div class="flex gap-3 justify-end pt-2">
+        <button onclick="hideSetupModal()" class="px-4 py-2 rounded-md bg-gray-100">Cancel</button>
+        <button onclick="saveSetup()" class="px-4 py-2 rounded-md bg-pink-500 text-white">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Food Modal -->
+  <div id="customFoodModal" class="fixed hidden inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
+      <h3 class="text-lg font-semibold">Add Custom Food</h3>
+      <div>
+        <label class="block text-sm font-medium mb-1">Meal</label>
+        <select id="customMeal" class="w-full p-2 border rounded">
+          <option value="Breakfast">Breakfast</option>
+          <option value="Lunch">Lunch</option>
+          <option value="Snacks">Snacks</option>
+          <option value="Dinner">Dinner</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Food Name</label>
+        <input type="text" id="customFoodName" class="w-full p-2 border rounded" placeholder="e.g., Chocolate smoothie">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium mb-1">Calories</label>
+          <input type="number" id="customCalories" class="w-full p-2 border rounded" placeholder="e.g., 220">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Protein (g)</label>
+          <input type="number" id="customProtein" class="w-full p-2 border rounded" placeholder="e.g., 8">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Iron (mg)</label>
+          <input type="number" id="customIron" class="w-full p-2 border rounded" placeholder="e.g., 3">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Calcium (mg)</label>
+          <input type="number" id="customCalcium" class="w-full p-2 border rounded" placeholder="e.g., 120">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Tags</label>
+        <input type="text" id="customTags" class="w-full p-2 border rounded" placeholder="comma separated tags e.g., sweet, comfort">
+      </div>
+      <div class="flex gap-3 justify-end pt-1">
+        <button onclick="hideCustomFoodModal()" class="px-4 py-2 rounded-md bg-gray-100">Cancel</button>
+        <button onclick="saveCustomFood()" class="px-4 py-2 rounded-md bg-green-500 text-white">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Partner Modal (view-only dashboard) -->
+  <div id="partnerModal" class="fixed hidden inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-6 space-y-4">
+      <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa-solid fa-user-group text-blue-600"></i> Partner Dashboard</h3>
+      <div id="partnerPhaseInfo" class="text-sm"></div>
+      <div class="text-xs text-slate-600 space-y-2">
+        <p id="partnerAlertStatus"></p>
+        <ul id="partnerUpcomingAlerts" class="space-y-1"></ul>
+      </div>
+      <button onclick="simulatePartnerNotify()" class="bg-blue-500 text-white px-4 py-2 rounded-lg w-full flex justify-center gap-2">
+        <i class="fa-solid fa-paper-plane"></i> Notify Partner Now
+      </button>
+      <button onclick="hidePartnerModal()" class="bg-gray-100 px-4 py-2 rounded-lg w-full">Close</button>
+      <div id="partnerNotificationMsg" class="mt-1 text-xs text-blue-700 font-medium"></div>
+    </div>
+  </div>
+
+  <!-- Auth Modals -->
+  <div id="loginModal" class="fixed hidden inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Login</h3>
+        <button onclick="closeLoginModal()" class="text-slate-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input id="loginEmail" type="email" class="w-full p-2 border rounded" placeholder="Email">
+      <input id="loginPassword" type="password" class="w-full p-2 border rounded" placeholder="Password">
+      <div class="flex justify-between text-xs">
+        <span class="text-slate-500">Social login coming soon</span>
+        <button class="text-blue-600 hover:underline" onclick="openForgotModal()">Forgot password?</button>
+      </div>
+      <button onclick="login()" class="w-full py-2 rounded-lg bg-pink-500 text-white">Login</button>
+      <div class="text-xs text-center text-slate-500">No account? <button class="text-blue-600 hover:underline" onclick="switchToSignup()">Sign up</button></div>
+    </div>
+  </div>
+
+  <div id="signupModal" class="fixed hidden inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Create Account</h3>
+        <button onclick="closeSignupModal()" class="text-slate-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="suName" class="p-2 border rounded" placeholder="Name">
+        <input id="suAge" type="number" class="p-2 border rounded" placeholder="Age">
+        <select id="suGender" class="p-2 border rounded">
+          <option value="">Gender</option>
+          <option>Female</option>
+          <option>Male</option>
+          <option>Non-binary</option>
+          <option>Prefer not to say</option>
+        </select>
+        <input id="suPhone" class="p-2 border rounded" placeholder="Phone number">
+      </div>
+      <input id="suEmail" type="email" class="w-full p-2 border rounded" placeholder="Email">
+      <input id="suPassword" type="password" class="w-full p-2 border rounded" placeholder="Password (min 8 chars, 1 number)">
+      <div class="flex items-center gap-3">
+        <img id="suAvatarPreview" class="w-12 h-12 rounded-full object-cover bg-slate-100" alt="">
+        <input id="suAvatar" type="file" accept="image/*" class="text-xs" onchange="previewAvatar(event,'suAvatarPreview')">
+      </div>
+      <div class="border rounded p-3 space-y-2">
+        <div class="text-sm font-semibold">Partner Sign Up (Optional)</div>
+        <input id="spName" class="w-full p-2 border rounded" placeholder="Partner Name">
+        <div class="grid grid-cols-2 gap-2">
+          <input id="spEmail" class="p-2 border rounded" placeholder="Partner Email">
+          <input id="spPhone" class="p-2 border rounded" placeholder="Partner Phone">
+        </div>
+      </div>
+      <button onclick="signup()" class="w-full py-2 rounded-lg bg-pink-500 text-white">Create Account</button>
+      <div class="text-xs text-center text-slate-500">Already have an account? <button class="text-blue-600 hover:underline" onclick="switchToLogin()">Login</button></div>
+    </div>
+  </div>
+
+  <div id="forgotModal" class="fixed hidden inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Reset Password</h3>
+        <button onclick="closeForgotModal()" class="text-slate-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input id="fpEmail" type="email" class="w-full p-2 border rounded" placeholder="Enter your email">
+      <button onclick="sendResetOTP()" class="w-full py-2 rounded-lg bg-blue-600 text-white">Send OTP</button>
+      <input id="fpOTP" class="w-full p-2 border rounded" placeholder="Enter OTP">
+      <input id="fpNewPassword" type="password" class="w-full p-2 border rounded" placeholder="New password">
+      <button onclick="confirmReset()" class="w-full py-2 rounded-lg bg-pink-500 text-white">Reset Password</button>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="fixed hidden inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Profile</h3>
+        <button onclick="closeProfileModal()" class="text-slate-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <div class="flex items-center gap-3">
+            <img id="pfAvatarPreview" class="w-16 h-16 rounded-full object-cover bg-slate-100" alt="">
+            <input id="pfAvatar" type="file" accept="image/*" class="text-xs" onchange="previewAvatar(event,'pfAvatarPreview')">
+          </div>
+          <input id="pfName" class="w-full p-2 border rounded" placeholder="Name">
+          <div class="grid grid-cols-3 gap-2">
+            <input id="pfAge" type="number" class="p-2 border rounded" placeholder="Age">
+            <input id="pfWeight" type="number" class="p-2 border rounded" placeholder="Weight (kg)">
+            <input id="pfHeight" type="number" class="p-2 border rounded" placeholder="Height (cm)">
+          </div>
+          <textarea id="pfHealthNotes" rows="3" class="w-full p-2 border rounded text-sm" placeholder="Health notes (allergies, medications, etc.)"></textarea>
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Cycle Details</label>
+          <input id="pfCycleStart" type="date" class="w-full p-2 border rounded">
+          <input id="pfCycleLength" type="number" min="20" max="40" class="w-full p-2 border rounded" placeholder="Average cycle length (days)">
+          <label class="text-sm font-medium mt-2">Contact</label>
+          <input id="pfEmail" type="email" class="w-full p-2 border rounded" placeholder="Email">
+          <input id="pfPhone" class="w-full p-2 border rounded" placeholder="Phone">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeProfileModal()" class="px-4 py-2 rounded bg-gray-100">Cancel</button>
+        <button onclick="saveProfile()" class="px-4 py-2 rounded bg-pink-500 text-white">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Partner Settings Modal -->
+  <div id="partnerSettingsModal" class="fixed hidden inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-lg space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Partner Settings</h3>
+        <button onclick="closePartnerModalSettings()" class="text-slate-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="ptName" class="p-2 border rounded" placeholder="Name">
+        <select id="ptRelationship" class="p-2 border rounded">
+          <option>Partner</option><option>Friend</option><option>Family</option>
+        </select>
+        <input id="ptEmail" class="p-2 border rounded col-span-2" placeholder="Email">
+        <input id="ptPhone" class="p-2 border rounded col-span-2" placeholder="Phone">
+      </div>
+      <label class="flex items-center gap-2 text-sm"><input id="ptOptIn" type="checkbox"> Allow cycle alerts to partner</label>
+      <div class="border rounded p-3 space-y-2">
+        <div class="text-sm font-semibold">Invite / Link</div>
+        <div class="text-xs text-slate-600">Simulated invite via email/OTP.</div>
+        <div class="flex gap-2">
+          <button onclick="sendPartnerInvite()" class="px-3 py-1 rounded bg-blue-600 text-white"><i class="fa-solid fa-paper-plane mr-1"></i>Send Invite</button>
+          <input id="ptOTP" class="flex-1 p-2 border rounded" placeholder="Enter OTP">
+          <button onclick="verifyPartnerOTP()" class="px-3 py-1 rounded bg-emerald-600 text-white">Verify</button>
+        </div>
+        <div id="ptInviteStatus" class="text-xs text-slate-600"></div>
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button onclick="closePartnerModalSettings()" class="px-4 py-2 rounded bg-gray-100">Close</button>
+        <button onclick="savePartnerSettings()" class="px-4 py-2 rounded bg-pink-500 text-white">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications Settings Modal -->
+  <div id="notificationsSettingsModal" class="fixed hidden inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Notification Preferences</h3>
+        <button onclick="closeNotificationsSettings()" class="text-slate-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <label class="flex items-center justify-between"><span>WhatsApp / SMS alerts</span><input type="checkbox" id="nsSms" /></label>
+      <label class="flex items-center justify-between"><span>Email alerts</span><input type="checkbox" id="nsEmail" /></label>
+      <label class="flex items-center justify-between"><span>App push (browser)</span><input type="checkbox" id="nsPush" /></label>
+      <label class="flex items-center justify-between"><span>Daily meal reminders</span><input type="checkbox" id="nsMeals" /></label>
+      <label class="flex items-center justify-between"><span>Hydration reminders</span><input type="checkbox" id="nsWater" /></label>
+      <label class="flex items-center justify-between"><span>Exercise reminders</span><input type="checkbox" id="nsWorkout" /></label>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeNotificationsSettings()" class="px-4 py-2 rounded bg-gray-100">Close</button>
+        <button onclick="saveNotificationsSettings()" class="px-4 py-2 rounded bg-pink-500 text-white">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_CYCLE_LENGTH = 29;
+    const PHASES = ["menstrual", "follicular", "ovulation", "luteal"];
+    const PHASE_COLORS = { menstrual: "#ef4444", follicular: "#facc15", ovulation: "#22c55e", luteal: "#6366f1" };
+    const PHASE_LABEL = { menstrual: "Menstrual", follicular: "Follicular", ovulation: "Ovulation", luteal: "Luteal" };
+    const MEAL_STRUCTURE = ["Breakfast", "Lunch", "Snacks", "Dinner"];
+    const SYMPTOM_OPTIONS = ["Cramps","Mood swings","Headache","Back pain","Fatigue","Bloating","Tender breasts","Acne","Food cravings","Nausea","Brain fog","Low energy","High energy","Restless sleep","Low appetite"];
+    const MOOD_FOOD_SUGGESTIONS = {
+      energetic:{tip:"Keep energy up with lean protein and complex carbs.",boost:["protein","carbs"]},
+      happy:{tip:"Maintain your glow with colorful produce & healthy fats.",boost:["fresh","protein"]},
+      neutral:{tip:"Stay balanced with mineral-rich, whole foods.",boost:["fresh","protein","carbs"]},
+      creative:{tip:"Support creativity with berries, nuts, and hydration.",boost:["sweet","protein"]},
+      irritable:{tip:"Calm nerves with magnesium-rich comfort meals.",boost:["comfort","sweet"]},
+      tired:{tip:"Recharge with iron-focused hearty foods and greens.",boost:["protein","fresh"]},
+      anxious:{tip:"Soothe anxiety with warm, grounding meals.",boost:["comfort","carbs"]},
+      bloated:{tip:"Reduce bloating with light, fresh, hydrating options.",boost:["fresh"]}
+    };
+    const PHASE_TIPS = {
+      menstrual:"Focus on warm, iron-rich comfort meals, gentle stretching, and extra hydration. Honour rest and track cramps/pain closely.",
+      follicular:"Experiment with new workouts, pack meals with leafy greens, and seize creative energy. Great time for planning & socializing.",
+      ovulation:"Maximise fertility window with lean proteins, antioxidants, and cardio bursts. Social energy peaks – communicate goals with support circle.",
+      luteal:"Water, magnesium-rich snacks, mindful movement, and early bedtimes help manage PMS symptoms."
+    };
+    const PHASE_RECOMMENDATIONS = {
+      menstrual:{ exercise:["Gentle yoga flow","Low-intensity pilates","Leisure walk 20 min"], sleep:["9:30 pm wind-down","Sip chamomile tea","Keep bedroom cool"], mindfulness:["Guided breathwork","Journaling gratitude","5-minute body scan"] },
+      follicular:{ exercise:["Build strength with weights","Try a new class","HIIT (short)"], sleep:["Regular wake-up","Light stretching before bed","Sunlight exposure AM"], mindfulness:["Goal visualization","Creative brainstorming","Set intentions"] },
+      ovulation:{ exercise:["Cardio intervals","Dance workout","Partner workouts"], sleep:["Cool showers before bed","Limit screen time 1 hr before sleep","Magnesium supplement"], mindfulness:["Connection check-ins","Celebrate wins","Expressive journaling"] },
+      luteal:{ exercise:["Low-impact strength","Light swimming","Restorative yoga"], sleep:["Consistent bedtime routine","No caffeine post-2 pm","Lavender diffuser"], mindfulness:["Guided meditation","Breathing ladder","PMS affirmation audio"] }
+    };
+    const NUTRIENT_BASELINE = { calories: 2000, protein: 70, iron: 18, calcium: 1000 };
+    const FOOD_NUTRIENTS = { "Oatmeal with berries":{calories:280,protein:8,iron:2.1,calcium:110},"Boiled eggs":{calories:140,protein:12,iron:1.2,calcium:50},"Orange juice":{calories:110,protein:2,iron:0.4,calcium:140},"Lentil soup":{calories:220,protein:14,iron:3.3,calcium:40},"Quinoa salad":{calories:260,protein:9,iron:2.8,calcium:30},"Grilled chicken":{calories:230,protein:32,iron:1.1,calcium:15},"Pumpkin seeds":{calories:180,protein:9,iron:4.2,calcium:40},"Greek yogurt":{calories:150,protein:15,iron:0.1,calcium:170},"Dark chocolate":{calories:170,protein:2,iron:3.4,calcium:40},"Steamed broccoli":{calories:55,protein:4,iron:1,calcium:60},"Red meat":{calories:250,protein:28,iron:3,calcium:35},"Bell pepper stir fry":{calories:180,protein:5,iron:1,calcium:30},"Spinach omelet":{calories:210,protein:14,iron:3,calcium:180},"Whole wheat toast":{calories:110,protein:4,iron:0.9,calcium:30},"Banana":{calories:95,protein:1,iron:0.3,calcium:6},"Salmon salad":{calories:320,protein:24,iron:1.5,calcium:60},"Brown rice":{calories:215,protein:5,iron:1,calcium:20},"Steamed kale":{calories:45,protein:3,iron:1.5,calcium:90},"Almonds":{calories:170,protein:6,iron:1.1,calcium:75},"Fruit smoothie":{calories:190,protein:5,iron:0.7,calcium:110},"Hummus & veggies":{calories:160,protein:6,iron:1.3,calcium:35},"Grilled tofu":{calories:200,protein:16,iron:3,calcium:150},"Sweet potatoes":{calories:180,protein:4,iron:1.4,calcium:30},"Roasted veggies":{calories:150,protein:4,iron:1.1,calcium:35},"Smoothie bowl":{calories:280,protein:7,iron:1.5,calcium:120},"Yogurt parfait":{calories:220,protein:12,iron:0.5,calcium:200},"Fresh berries":{calories:70,protein:1,iron:0.5,calcium:20},"Chicken stir fry":{calories:300,protein:26,iron:1.8,calcium:45},"Quinoa pilaf":{calories:250,protein:8,iron:2.1,calcium:35},"Mixed salad":{calories:140,protein:5,iron:1.2,calcium:60},"Carrot sticks":{calories:45,protein:1,iron:0.3,calcium:30},"Trail mix":{calories:210,protein:6,iron:1.4,calcium:40},"Fish curry":{calories:320,protein:28,iron:2.5,calcium:55},"Colorful veggies":{calories:120,protein:4,iron:1.1,calcium:40},"Oats with milk":{calories:260,protein:9,iron:2.3,calcium:220},"Apple":{calories:80,protein:0.4,iron:0.2,calcium:10},"Walnuts":{calories:185,protein:4,iron:1,calcium:45},"Turkey wrap":{calories:320,protein:27,iron:1.8,calcium:90},"Sweet potato wedges":{calories:200,protein:4,iron:1.4,calcium:40},"Leafy greens":{calories:35,protein:3,iron:1.5,calcium:70},"Chamomile tea":{calories:2,protein:0,iron:0,calcium:2},"Cheese & crackers":{calories:220,protein:9,iron:0.8,calcium:200},"Chia-seed salad":{calories:210,protein:7,iron:2.2,calcium:180},"Salmon":{calories:280,protein:23,iron:1,calcium:20},"Grilled zucchini":{calories:60,protein:2,iron:0.5,calcium:20} };
+
+    // App state
+    let entries = {};
+    let startDate = null;
+    let cycleLength = DEFAULT_CYCLE_LENGTH;
+    let customFoods = {};
+    let darkMode = false;
+    let calendarCursor = new Date();
+    let notificationSettings = { sms:false, meals:false, water:false, workout:false, email:false, push:false };
+    let streakCount = 0;
+    let achievements = [];
+    let communityMessages = [];
+    let partnerNotifications = { period:true, fertility:true, linked:false, otp:null };
+    let speechRecognition = null;
+    let voiceActive = false;
+
+    // Auth state
+    let users = {}; // email -> user object
+    let currentUserEmail = null;
+
+    function saveAuth() {
+      localStorage.setItem("cycleNourish_users", JSON.stringify(users));
+      localStorage.setItem("cycleNourish_currentUserEmail", currentUserEmail || "");
+    }
+    function loadAuth() {
+      users = JSON.parse(localStorage.getItem("cycleNourish_users") || "{}");
+      currentUserEmail = localStorage.getItem("cycleNourish_currentUserEmail") || null;
+    }
+    function getCurrentUser() { return currentUserEmail ? users[currentUserEmail] : null; }
+
+    function validateEmail(email){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+    function validatePassword(pw){ return /^(?=.*\d).{8,}$/.test(pw); }
+
+    function toggleUIForAuth() {
+      const isAuthed = !!getCurrentUser();
+      document.getElementById("authGate").classList.toggle("hidden", isAuthed);
+      document.getElementById("dashboard").classList.toggle("hidden", !isAuthed);
+      document.getElementById("authButtons").classList.toggle("hidden", isAuthed);
+      document.getElementById("profileMenu").classList.toggle("hidden", !isAuthed);
+      if (isAuthed) {
+        const u = getCurrentUser();
+        document.getElementById("navUserName").textContent = u.name || u.email;
+        document.getElementById("navAvatar").src = u.avatar || "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(u.name || u.email);
+        // load user-specific cycle
+        startDate = u.cycleStart || startDate;
+        cycleLength = u.cycleLength || cycleLength;
+        saveState();
+        renderAll();
+        document.getElementById("partnerAlertsSummary").textContent = u.partner?.optIn ? "Partner alerts enabled" : "Partner alerts disabled";
+      }
+    }
+
+    // Auth UI helpers
+    function openLoginModal(){ document.getElementById("loginModal").classList.remove("hidden"); }
+    function closeLoginModal(){ document.getElementById("loginModal").classList.add("hidden"); }
+    function openSignupModal(){ document.getElementById("signupModal").classList.remove("hidden"); }
+    function closeSignupModal(){ document.getElementById("signupModal").classList.add("hidden"); }
+    function openForgotModal(){ document.getElementById("forgotModal").classList.remove("hidden"); }
+    function closeForgotModal(){ document.getElementById("forgotModal").classList.add("hidden"); }
+    function switchToSignup(){ closeLoginModal(); openSignupModal(); }
+    function switchToLogin(){ closeSignupModal(); openLoginModal(); }
+
+    function previewAvatar(event, targetId){
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => { document.getElementById(targetId).src = e.target.result; };
+      reader.readAsDataURL(file);
+    }
+
+    function signup(){
+      const name = document.getElementById("suName").value.trim();
+      const email = document.getElementById("suEmail").value.trim();
+      const password = document.getElementById("suPassword").value;
+      const age = parseInt(document.getElementById("suAge").value || "0", 10);
+      const gender = document.getElementById("suGender").value;
+      const phone = document.getElementById("suPhone").value.trim();
+      const avatarEl = document.getElementById("suAvatarPreview");
+      if (!validateEmail(email)) return alert("Please enter a valid email.");
+      if (!validatePassword(password)) return alert("Password must be 8+ chars and include a number.");
+      if (users[email]) return alert("This email is already registered.");
+      const partner = {
+        name: document.getElementById("spName").value.trim(),
+        email: document.getElementById("spEmail").value.trim(),
+        phone: document.getElementById("spPhone").value.trim(),
+        relationship: "Partner",
+        optIn: false,
+        linked:false
+      };
+      const user = {
+        name, email, password, age, gender, phone,
+        avatar: avatarEl?.src || "",
+        weight:null, height:null,
+        healthNotes:"",
+        cycleStart:null, cycleLength: DEFAULT_CYCLE_LENGTH,
+        partner,
+        notifications: { sms:false, email:false, push:false, meals:false, water:false, workout:false }
+      };
+      users[email] = user;
+      currentUserEmail = email;
+      saveAuth();
+      closeSignupModal();
+      toggleUIForAuth();
+      alert("Account created! Welcome to CycleNourish.");
+    }
+    function login(){
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+      if (!users[email] || users[email].password !== password) return alert("Invalid email or password.");
+      currentUserEmail = email;
+      saveAuth();
+      closeLoginModal();
+      toggleUIForAuth();
+    }
+    function logout(){
+      currentUserEmail = null;
+      saveAuth();
+      toggleUIForAuth();
+    }
+
+    // Forgot password (simulated OTP)
+    function sendResetOTP(){
+      const email = document.getElementById("fpEmail").value.trim();
+      if (!validateEmail(email)) return alert("Enter a valid email.");
+      if (!users[email]) return alert("No account found for this email.");
+      const otp = String(Math.floor(100000 + Math.random()*900000));
+      users[email].resetOTP = otp;
+      saveAuth();
+      alert("OTP sent (simulated): " + otp);
+    }
+    function confirmReset(){
+      const email = document.getElementById("fpEmail").value.trim();
+      const otp = document.getElementById("fpOTP").value.trim();
+      const newPw = document.getElementById("fpNewPassword").value;
+      if (!users[email]) return alert("No account found.");
+      if (users[email].resetOTP !== otp) return alert("Invalid OTP.");
+      if (!validatePassword(newPw)) return alert("Password must be 8+ chars and include a number.");
+      users[email].password = newPw;
+      delete users[email].resetOTP;
+      saveAuth();
+      closeForgotModal();
+      alert("Password reset successful. Please login.");
+    }
+
+    // Profile
+    function openProfileModal(){
+      const u = getCurrentUser(); if (!u) return;
+      document.getElementById("pfAvatarPreview").src = u.avatar || "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(u.name || u.email);
+      document.getElementById("pfName").value = u.name || "";
+      document.getElementById("pfAge").value = u.age || "";
+      document.getElementById("pfWeight").value = u.weight || "";
+      document.getElementById("pfHeight").value = u.height || "";
+      document.getElementById("pfHealthNotes").value = u.healthNotes || "";
+      document.getElementById("pfCycleStart").value = u.cycleStart || "";
+      document.getElementById("pfCycleLength").value = u.cycleLength || DEFAULT_CYCLE_LENGTH;
+      document.getElementById("pfEmail").value = u.email || "";
+      document.getElementById("pfPhone").value = u.phone || "";
+      document.getElementById("profileModal").classList.remove("hidden");
+    }
+    function closeProfileModal(){ document.getElementById("profileModal").classList.add("hidden"); }
+    function saveProfile(){
+      const u = getCurrentUser(); if (!u) return;
+      const oldEmail = u.email;
+      const newEmail = document.getElementById("pfEmail").value.trim();
+      if (!validateEmail(newEmail)) return alert("Enter a valid email.");
+      const updated = {
+        ...u,
+        name: document.getElementById("pfName").value.trim(),
+        age: parseInt(document.getElementById("pfAge").value || "0",10),
+        weight: parseFloat(document.getElementById("pfWeight").value || "0"),
+        height: parseFloat(document.getElementById("pfHeight").value || "0"),
+        healthNotes: document.getElementById("pfHealthNotes").value.trim(),
+        cycleStart: document.getElementById("pfCycleStart").value || null,
+        cycleLength: parseInt(document.getElementById("pfCycleLength").value || `${DEFAULT_CYCLE_LENGTH}`,10),
+        phone: document.getElementById("pfPhone").value.trim(),
+        email: newEmail
+      };
+      const avatarEl = document.getElementById("pfAvatarPreview");
+      if (avatarEl?.src) updated.avatar = avatarEl.src;
+      // Handle email change
+      if (newEmail !== oldEmail) {
+        if (users[newEmail]) return alert("This email is already in use.");
+        delete users[oldEmail];
+        users[newEmail] = updated;
+        currentUserEmail = newEmail;
+      } else {
+        users[oldEmail] = updated;
+      }
+      saveAuth();
+      // sync cycle to app state
+      startDate = updated.cycleStart;
+      cycleLength = updated.cycleLength || DEFAULT_CYCLE_LENGTH;
+      saveState();
+      closeProfileModal();
+      toggleUIForAuth();
+      alert("Profile updated.");
+    }
+
+    // Partner settings
+    function openPartnerModalSettings(){
+      const u = getCurrentUser(); if (!u) return;
+      document.getElementById("ptName").value = u.partner?.name || "";
+      document.getElementById("ptEmail").value = u.partner?.email || "";
+      document.getElementById("ptPhone").value = u.partner?.phone || "";
+      document.getElementById("ptRelationship").value = u.partner?.relationship || "Partner";
+      document.getElementById("ptOptIn").checked = !!u.partner?.optIn;
+      document.getElementById("partnerSettingsModal").classList.remove("hidden");
+      document.getElementById("ptInviteStatus").textContent = u.partner?.linked ? "Partner linked." : "Not linked.";
+    }
+    function closePartnerModalSettings(){ document.getElementById("partnerSettingsModal").classList.add("hidden"); }
+    function savePartnerSettings(){
+      const u = getCurrentUser(); if (!u) return;
+      u.partner = {
+        name: document.getElementById("ptName").value.trim(),
+        email: document.getElementById("ptEmail").value.trim(),
+        phone: document.getElementById("ptPhone").value.trim(),
+        relationship: document.getElementById("ptRelationship").value,
+        optIn: document.getElementById("ptOptIn").checked,
+        linked: u.partner?.linked || false
+      };
+      users[u.email] = u;
+      saveAuth();
+      document.getElementById("partnerAlertsSummary").textContent = u.partner.optIn ? "Partner alerts enabled" : "Partner alerts disabled";
+      closePartnerModalSettings();
+    }
+    function sendPartnerInvite(){
+      const u = getCurrentUser(); if (!u) return;
+      const otp = String(Math.floor(100000 + Math.random()*900000));
+      partnerNotifications.otp = otp;
+      u.partner = u.partner || {};
+      u.partner.linked = false;
+      users[u.email] = u; saveAuth();
+      document.getElementById("ptInviteStatus").textContent = "Invite sent (simulated). OTP: " + otp;
+      alert("Partner invite sent (simulated). OTP: " + otp);
+    }
+    function verifyPartnerOTP(){
+      const u = getCurrentUser(); if (!u) return;
+      const entered = document.getElementById("ptOTP").value.trim();
+      if (entered && entered === partnerNotifications.otp){
+        u.partner = u.partner || {};
+        u.partner.linked = true;
+        users[u.email] = u; saveAuth();
+        document.getElementById("ptInviteStatus").textContent = "Partner linked successfully.";
+        alert("Partner linked successfully.");
+      } else {
+        alert("Invalid OTP.");
+      }
+    }
+
+    // Notifications settings modal
+    function openNotificationsSettings(){
+      const u = getCurrentUser(); if (!u) return;
+      document.getElementById("nsSms").checked = !!u.notifications?.sms;
+      document.getElementById("nsEmail").checked = !!u.notifications?.email;
+      document.getElementById("nsPush").checked = !!u.notifications?.push;
+      document.getElementById("nsMeals").checked = !!u.notifications?.meals;
+      document.getElementById("nsWater").checked = !!u.notifications?.water;
+      document.getElementById("nsWorkout").checked = !!u.notifications?.workout;
+      document.getElementById("notificationsSettingsModal").classList.remove("hidden");
+    }
+    function closeNotificationsSettings(){ document.getElementById("notificationsSettingsModal").classList.add("hidden"); }
+    function saveNotificationsSettings(){
+      const u = getCurrentUser(); if (!u) return;
+      u.notifications = {
+        sms: document.getElementById("nsSms").checked,
+        email: document.getElementById("nsEmail").checked,
+        push: document.getElementById("nsPush").checked,
+        meals: document.getElementById("nsMeals").checked,
+        water: document.getElementById("nsWater").checked,
+        workout: document.getElementById("nsWorkout").checked
+      };
+      users[u.email] = u; saveAuth();
+      alert("Notification settings saved.");
+      closeNotificationsSettings();
+    }
+
+    // Existing app state persistence
+    function loadState() {
+      entries = JSON.parse(localStorage.getItem("cycleNourish_entries") || "{}");
+      startDate = localStorage.getItem("cycleNourish_startDate") || null;
+      cycleLength = parseInt(localStorage.getItem("cycleNourish_cycleLength") || `${DEFAULT_CYCLE_LENGTH}`, 10);
+      customFoods = JSON.parse(localStorage.getItem("cycleNourish_customFoods") || "{}");
+      darkMode = localStorage.getItem("cycleNourish_dark") === "1";
+      notificationSettings = JSON.parse(localStorage.getItem("cycleNourish_notifications") || JSON.stringify(notificationSettings));
+      streakCount = parseInt(localStorage.getItem("cycleNourish_streak") || "0", 10);
+      achievements = JSON.parse(localStorage.getItem("cycleNourish_achievements") || "[]");
+      communityMessages = JSON.parse(localStorage.getItem("cycleNourish_community") || "[]");
+      partnerNotifications = JSON.parse(localStorage.getItem("cycleNourish_partner") || JSON.stringify(partnerNotifications));
+    }
+    function saveState() {
+      localStorage.setItem("cycleNourish_entries", JSON.stringify(entries));
+      localStorage.setItem("cycleNourish_startDate", startDate || "");
+      localStorage.setItem("cycleNourish_cycleLength", cycleLength);
+      localStorage.setItem("cycleNourish_customFoods", JSON.stringify(customFoods));
+      localStorage.setItem("cycleNourish_dark", darkMode ? "1" : "0");
+      localStorage.setItem("cycleNourish_notifications", JSON.stringify(notificationSettings));
+      localStorage.setItem("cycleNourish_streak", streakCount);
+      localStorage.setItem("cycleNourish_achievements", JSON.stringify(achievements));
+      localStorage.setItem("cycleNourish_community", JSON.stringify(communityMessages));
+      localStorage.setItem("cycleNourish_partner", JSON.stringify(partnerNotifications));
+    }
+
+    // Existing business logic (calendar, nutrition, charts, etc.)
+    function formatISO(year, month, day) {
+      const mm = String(month + 1).padStart(2, "0");
+      const dd = String(day).padStart(2, "0");
+      return `${year}-${mm}-${dd}`;
+    }
+    function getTodayISO() {
+      const today = new Date();
+      return formatISO(today.getFullYear(), today.getMonth(), today.getDate());
+    }
+    function prettyDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    }
+    function getPhaseInfo(dateStr) {
+      if (!startDate) return { phase: null, idx: -1 };
+      const start = new Date(startDate);
+      const d = new Date(dateStr);
+      let diff = Math.floor((d - start) / (1000 * 60 * 60 * 24));
+      if (diff < 0) diff = 0;
+      const idx = cycleLength > 0 ? diff % cycleLength : 0;
+      let phase = "follicular";
+      if (idx < 5) phase = "menstrual";
+      else if (idx < 14) phase = "follicular";
+      else if (idx < 16) phase = "ovulation";
+      else phase = "luteal";
+      return { phase, idx, dayOfCycle: idx + 1, diff };
+    }
+    function getTodayPhase() {
+      return getPhaseInfo(getTodayISO()).phase || "follicular";
+    }
+
+    function handleDailyUpdate() {
+      const iso = getTodayISO();
+      entries[iso] = entries[iso] || {};
+      entries[iso].mood = document.getElementById("moodSelector").value;
+      entries[iso].craving = document.getElementById("cravingSelector").value;
+      entries[iso].energy = parseInt(document.getElementById("energySlider").value || "3", 10);
+      entries[iso].symptoms = entries[iso].symptoms || [];
+      entries[iso].symptomNote = document.getElementById("symptomNote").value.trim();
+      saveState();
+      updateMoodInsights();
+      renderNutritionPlanner();
+      renderHistory();
+      drawCharts();
+      refreshAISuggestions();
+      updateStreak();
+      renderAchievements();
+      renderSymptomSection();
+      renderPredictions();
+    }
+
+    function renderSymptomSection() {
+      const container = document.getElementById("symptomBadges");
+      container.innerHTML = "";
+      const iso = getTodayISO();
+      entries[iso] = entries[iso] || {};
+      entries[iso].symptoms = entries[iso].symptoms || [];
+      SYMPTOM_OPTIONS.forEach(symptom => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `px-3 py-1 rounded-full border text-xs transition ${entries[iso].symptoms.includes(symptom) ? "bg-rose-100 border-rose-300 text-rose-700" : "hover:bg-slate-100"}`;
+        btn.textContent = symptom;
+        btn.onclick = () => {
+          const idx = entries[iso].symptoms.indexOf(symptom);
+          if (idx >= 0) entries[iso].symptoms.splice(idx, 1);
+          else entries[iso].symptoms.push(symptom);
+          saveState();
+          renderSymptomSection();
+          renderHistory();
+          drawCharts();
+          renderPredictions();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function updateMoodInsights() {
+      const iso = getTodayISO();
+      const entry = entries[iso] || {};
+      const mood = entry.mood;
+      const craving = entry.craving;
+      const tipDiv = document.getElementById("personalizedTip");
+      const tipText = document.getElementById("tipText");
+      if (mood || craving) {
+        tipDiv.classList.remove("hidden");
+        let suggestion = "";
+        if (mood && MOOD_FOOD_SUGGESTIONS[mood]) suggestion += MOOD_FOOD_SUGGESTIONS[mood].tip;
+        if (craving) suggestion += ` Try foods tagged with “${craving}” below.`;
+        tipText.textContent = suggestion;
+      } else {
+        tipDiv.classList.add("hidden");
+        tipText.textContent = "";
+      }
+      document.getElementById("energyBadge").textContent = entry.energy ? `${entry.energy}/5` : "--";
+      document.getElementById("moodBadge").textContent = mood ? mood.charAt(0).toUpperCase() + mood.slice(1) : "--";
+    }
+
+    function renderNutritionPlanner() {
+      const phase = getTodayPhase();
+      const iso = getTodayISO();
+      const entry = entries[iso] || {};
+      const boostedTags = [];
+      if (entry.mood && MOOD_FOOD_SUGGESTIONS[entry.mood]) boostedTags.push(...MOOD_FOOD_SUGGESTIONS[entry.mood].boost);
+      if (entry.craving) boostedTags.push(entry.craving);
+      const meals = PHASE_NUTRITION[phase]?.meals || [];
+      const container = document.getElementById("mealsGrid");
+      container.innerHTML = "";
+      const nutrientTotals = { calories: 0, protein: 0, iron: 0, calcium: 0 };
+      meals.forEach(mealData => {
+        const mealName = mealData.meal;
+        const foods = [...mealData.foods];
+        if (customFoods[mealName]) foods.push(...customFoods[mealName]);
+        const eaten = entry.eaten?.[mealName] || {};
+        const card = document.createElement("div");
+        card.className = `nutrition-card rounded-xl p-4 border shadow-sm space-y-3 phase-${phase}`;
+        const header = document.createElement("div");
+        header.className = "flex justify-between items-center";
+        header.innerHTML = `<span class="font-semibold">${mealName}</span>`;
+        const addToggle = document.createElement("button");
+        addToggle.className = "text-xs text-blue-600 hover:underline";
+        addToggle.textContent = eaten.complete ? "Unmark eaten" : "Mark eaten";
+        addToggle.onclick = () => {
+          entries[iso] = entries[iso] || {};
+          entries[iso].eaten = entries[iso].eaten || {};
+          entries[iso].eaten[mealName] = entries[iso].eaten[mealName] || { complete: false, foods: {} };
+          entries[iso].eaten[mealName].complete = !entries[iso].eaten[mealName].complete;
+          saveState();
+          renderNutritionPlanner();
+          renderHistory();
+          drawCharts();
+        };
+        header.appendChild(addToggle);
+        card.appendChild(header);
+        foods.forEach(food => {
+          const isCustom = !!food.custom;
+          const nutrient = FOOD_NUTRIENTS[food.name] || food.nutrients || { calories: 160, protein: 5, iron: 1, calcium: 60 };
+          const isBoosted = food.tags?.some(tag => boostedTags.includes(tag));
+          const row = document.createElement("div");
+          row.className = `flex items-center justify-between text-sm ${isBoosted ? "craving-badge" : ""}`;
+          const left = document.createElement("div");
+          left.className = "flex items-center gap-2";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = Boolean(entries[iso]?.eaten?.[mealName]?.foods?.[food.name]);
+          checkbox.onchange = (evt) => {
+            entries[iso] = entries[iso] || {};
+            entries[iso].eaten = entries[iso].eaten || {};
+            entries[iso].eaten[mealName] = entries[iso].eaten[mealName] || { complete:false, foods:{} };
+            if (evt.target.checked) entries[iso].eaten[mealName].foods[food.name] = true;
+            else delete entries[iso].eaten[mealName].foods[food.name];
+            saveState();
+            renderNutritionPlanner();
+            renderHistory();
+            drawCharts();
+          };
+          left.appendChild(checkbox);
+          const nameSpan = document.createElement("span");
+          nameSpan.innerHTML = `${isBoosted ? "✨ " : ""}${food.name}`;
+          left.appendChild(nameSpan);
+          row.appendChild(left);
+          const right = document.createElement("div");
+          right.className = "flex items-center gap-1 flex-wrap justify-end";
+          if (food.tags) {
+            food.tags.forEach(tag => {
+              const tagSpan = document.createElement("span");
+              tagSpan.className = `food-tag ${boostedTags.includes(tag) ? "highlight" : ""}`;
+              tagSpan.textContent = tag;
+              right.appendChild(tagSpan);
+            });
+          }
+          const nutrientBadge = document.createElement("span");
+          nutrientBadge.className = "text-[0.65rem] text-slate-500";
+          nutrientBadge.textContent = `${nutrient.calories} kcal · ${nutrient.protein}g protein`;
+          right.appendChild(nutrientBadge);
+          if (isCustom) {
+            const removeBtn = document.createElement("button");
+            removeBtn.className = "text-red-500 text-xs ml-1";
+            removeBtn.textContent = "×";
+            removeBtn.onclick = () => removeCustomFood(mealName, food.name);
+            right.appendChild(removeBtn);
+          }
+          row.appendChild(right);
+          card.appendChild(row);
+          if (entries[iso]?.eaten?.[mealName]?.foods?.[food.name]) {
+            nutrientTotals.calories += nutrient.calories;
+            nutrientTotals.protein += nutrient.protein;
+            nutrientTotals.iron += nutrient.iron;
+            nutrientTotals.calcium += nutrient.calcium;
+          }
+        });
+        container.appendChild(card);
+      });
+      const summary = document.getElementById("nutrientSummary");
+      summary.innerHTML = `
+        <span>Calories: ${nutrientTotals.calories.toFixed(0)} / ${NUTRIENT_BASELINE.calories}</span>
+        <span>Protein: ${nutrientTotals.protein.toFixed(1)}g / ${NUTRIENT_BASELINE.protein}g</span>
+        <span>Iron: ${nutrientTotals.iron.toFixed(1)}mg / ${NUTRIENT_BASELINE.iron}mg</span>
+        <span>Calcium: ${nutrientTotals.calcium.toFixed(0)}mg / ${NUTRIENT_BASELINE.calcium}mg</span>
+      `;
+      const suggestionDiv = document.getElementById("recipeSugestions");
+      const plannedFoods = new Set();
+      (PHASE_NUTRITION[getTodayPhase()]?.meals || []).forEach(meal => meal.foods.forEach(f => plannedFoods.add(f.name)));
+      const groceryList = Array.from(plannedFoods).sort();
+      suggestionDiv.innerHTML = `<strong>Recipes & Grocery Inspirations:</strong> ${groceryList.join(", ")}`;
+    }
+
+    function markMealEaten(meal, checked) {
+      const iso = getTodayISO();
+      entries[iso] = entries[iso] || {};
+      entries[iso].eaten = entries[iso].eaten || {};
+      entries[iso].eaten[meal] = checked;
+      saveState();
+    }
+    function showCustomFoodModal() { document.getElementById("customFoodModal").classList.remove("hidden"); }
+    function hideCustomFoodModal() {
+      document.getElementById("customFoodModal").classList.add("hidden");
+      document.getElementById("customFoodName").value = "";
+      document.getElementById("customCalories").value = "";
+      document.getElementById("customProtein").value = "";
+      document.getElementById("customIron").value = "";
+      document.getElementById("customCalcium").value = "";
+      document.getElementById("customTags").value = "";
+    }
+    function saveCustomFood() {
+      const meal = document.getElementById("customMeal").value;
+      const foodName = document.getElementById("customFoodName").value.trim();
+      if (!foodName) return alert("Please enter a food name.");
+      const calories = parseFloat(document.getElementById("customCalories").value || "200");
+      const protein = parseFloat(document.getElementById("customProtein").value || "6");
+      const iron = parseFloat(document.getElementById("customIron").value || "1");
+      const calcium = parseFloat(document.getElementById("customCalcium").value || "60");
+      const tags = document.getElementById("customTags").value.split(",").map(t => t.trim()).filter(Boolean);
+      customFoods[meal] = customFoods[meal] || [];
+      if (!customFoods[meal].some(f => f.name === foodName)) {
+        customFoods[meal].push({ name: foodName, tags, custom: true, nutrients: { calories, protein, iron, calcium } });
+      }
+      saveState();
+      hideCustomFoodModal();
+      renderNutritionPlanner();
+    }
+    function removeCustomFood(meal, name) {
+      if (customFoods[meal]) {
+        customFoods[meal] = customFoods[meal].filter(f => f.name !== name);
+        if (!customFoods[meal].length) delete customFoods[meal];
+        saveState();
+        renderNutritionPlanner();
+      }
+    }
+    function generateGroceryList() {
+      const phase = getTodayPhase();
+      const meals = PHASE_NUTRITION[phase]?.meals || [];
+      const groceries = new Set();
+      meals.forEach(meal => meal.foods.forEach(food => groceries.add(food.name)));
+      if (customFoods) { Object.values(customFoods).flat().forEach(food => groceries.add(food.name)); }
+      const text = `Cycle phase: ${PHASE_LABEL[phase]}\nShopping list:\n- ${Array.from(groceries).sort().join("\n- ")}`;
+      navigator.clipboard.writeText(text).then(() => alert("Grocery list copied to clipboard!"));
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById("calendarGrid");
+      grid.innerHTML = "";
+      const current = new Date(calendarCursor);
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      document.getElementById("calendarMonth").textContent = current.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+      for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement("div"));
+      for (let day = 1; day <= daysInMonth; day++) {
+        const iso = formatISO(year, month, day);
+        const { phase } = getPhaseInfo(iso);
+        const cell = document.createElement("div");
+        cell.className = `calendar-day rounded-lg h-20 p-2 border flex flex-col justify-between cursor-pointer hover:shadow ${phase ? `phase-${phase}` : ""}`;
+        cell.dataset.date = iso;
+        const top = document.createElement("div");
+        top.className = "flex items-center justify-between";
+        top.innerHTML = `<div class="flex items-center"><span class="phase-dot ${phase || ""}"></span><span class="text-sm font-medium">${day}</span></div>`;
+        cell.appendChild(top);
+        const today = getTodayISO();
+        if (iso === today) {
+          const badge = document.createElement("span");
+          badge.className = "text-[0.65rem] text-white bg-pink-500 px-2 py-0.5 rounded-full self-start";
+          badge.textContent = "Today";
+          cell.appendChild(badge);
+        }
+        if (entries[iso]?.mood || entries[iso]?.craving || entries[iso]?.symptoms?.length) {
+          const badgeRow = document.createElement("div");
+          badgeRow.className = "flex gap-1 text-xs";
+          if (entries[iso].mood) badgeRow.innerHTML += `<span>😊</span>`;
+          if (entries[iso].craving) badgeRow.innerHTML += `<span>🍽️</span>`;
+          if (entries[iso].symptoms?.length) badgeRow.innerHTML += `<span>💬</span>`;
+          cell.appendChild(badgeRow);
+        }
+        cell.onclick = () => openHistoryModal(iso);
+        grid.appendChild(cell);
+      }
+    }
+    function changeMonth(offset) {
+      calendarCursor.setMonth(calendarCursor.getMonth() + offset);
+      renderCalendar();
+    }
+
+    function renderProgressBar() {
+      const today = new Date();
+      if (!startDate) {
+        document.getElementById("progressBarFill").style.width = "0%";
+        document.getElementById("cycleDaysText").textContent = "Cycle start not set.";
+        document.getElementById("cycleDayBadge").textContent = "Day --";
+        document.getElementById("nextMilestoneText").textContent = "";
+        document.getElementById("predictionSummary").textContent = "";
+        return;
+      }
+      const start = new Date(startDate);
+      const diff = Math.max(0, Math.floor((today - start) / (1000 * 60 * 60 * 24)));
+      const idx = diff % cycleLength;
+      const pct = (idx / cycleLength) * 100;
+      document.getElementById("progressBarFill").style.width = `${pct.toFixed(1)}%`;
+      document.getElementById("cycleDaysText").textContent = `Day ${idx + 1} of ${cycleLength}`;
+      document.getElementById("cycleDayBadge").textContent = `Day ${idx + 1}`;
+      const nextPeriod = new Date(start);
+      nextPeriod.setDate(start.getDate() + cycleLength * Math.ceil((diff + 1) / cycleLength));
+      document.getElementById("nextPeriodText").textContent = prettyDate(nextPeriod.toISOString().slice(0, 10));
+      const fertileStart = new Date(start);
+      fertileStart.setDate(start.getDate() + 12 + cycleLength * Math.floor(diff / cycleLength));
+      const fertileEnd = new Date(fertileStart);
+      fertileEnd.setDate(fertileStart.getDate() + 3);
+      document.getElementById("fertilityWindowText").textContent = `${prettyDate(fertileStart.toISOString().slice(0, 10))} → ${prettyDate(fertileEnd.toISOString().slice(0, 10))}`;
+      const milestone = idx < 5 ? "Menstrual recovery" : idx < 14 ? "Follicular rise" : idx < 16 ? "Ovulation surge" : "Luteal wind-down";
+      document.getElementById("nextMilestoneText").textContent = `Milestone: ${milestone}`;
+      document.getElementById("predictionSummary").textContent = `Currently: ${PHASE_LABEL[getTodayPhase()]}`;
+    }
+    function renderCurrentPhase() {
+      const phase = getTodayPhase();
+      document.getElementById("currentPhaseText").textContent = `${PHASE_LABEL[phase]} Phase`;
+      document.getElementById("avgCycleText").textContent = `${cycleLength} days (avg)`;
+      renderPhaseRecommendations();
+      renderSymptomSection();
+      renderPredictions();
+    }
+    function renderPhaseRecommendations() {
+      const phase = getTodayPhase();
+      const exerciseList = document.getElementById("exerciseRecommendations");
+      const sleepList = document.getElementById("sleepRecommendations");
+      const mindfulnessList = document.getElementById("mindfulnessRecommendations");
+      exerciseList.innerHTML = ""; sleepList.innerHTML = ""; mindfulnessList.innerHTML = "";
+      (PHASE_RECOMMENDATIONS[phase]?.exercise || []).forEach(item => { const li = document.createElement("li"); li.textContent = `• ${item}`; exerciseList.appendChild(li); });
+      (PHASE_RECOMMENDATIONS[phase]?.sleep || []).forEach(item => { const li = document.createElement("li"); li.textContent = `• ${item}`; sleepList.appendChild(li); });
+      (PHASE_RECOMMENDATIONS[phase]?.mindfulness || []).forEach(item => { const li = document.createElement("li"); li.textContent = `• ${item}`; mindfulnessList.appendChild(li); });
+      document.getElementById("tipsSection").textContent = PHASE_TIPS[phase] || "Choose a date to view tips.";
+    }
+    function renderPhaseTips() { document.getElementById("tipsSection").textContent = PHASE_TIPS[getTodayPhase()] || ""; }
+
+    function renderHistory() {
+      const list = document.getElementById("historyList");
+      const items = Object.keys(entries).sort((a, b) => new Date(b) - new Date(a));
+      list.innerHTML = "";
+      if (!items.length) {
+        list.innerHTML = '<div class="text-gray-500 text-center p-3">No entries yet. Click a date to log.</div>';
+        return;
+      }
+      items.forEach(iso => {
+        const entry = entries[iso];
+        const phase = getPhaseInfo(iso).phase;
+        const wrap = document.createElement("div");
+        wrap.className = "p-3 rounded-xl bg-slate-50 border shadow-sm space-y-2";
+        wrap.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold"><span class="phase-dot ${phase}"></span> ${prettyDate(iso)}</span>
+            <button onclick="deleteEntry('${iso}')" class="text-xs text-red-600 hover:underline">Delete</button>
+          </div>
+          ${entry.period ? '<div class="text-xs text-red-600">🩸 Period</div>' : ""}
+          ${entry.mood ? `<div class="text-xs">Mood: ${entry.mood}</div>` : ""}
+          ${entry.craving ? `<div class="text-xs">Craving: ${entry.craving}</div>` : ""}
+          ${entry.symptoms?.length ? `<div class="text-xs text-slate-600">Symptoms: ${entry.symptoms.join(", ")}</div>` : ""}
+          ${entry.symptomNote ? `<div class="text-sm text-slate-700 italic">“${entry.symptomNote}”</div>` : ""}
+        `;
+        list.appendChild(wrap);
+      });
+    }
+    function openHistoryModal(iso) {
+      const dateLabel = prettyDate(iso);
+      const entry = entries[iso] || {};
+      const modal = document.createElement("div");
+      modal.className = "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-45 p-4";
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-semibold">${dateLabel} Log</h3>
+            <button onclick="document.body.removeChild(this.closest('.fixed'))" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+          </div>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="periodCheckbox" ${entry.period ? "checked" : ""}> Period day</label>
+          <div>
+            <label class="block text-sm mb-1">Mood</label>
+            <select id="editMood" class="w-full p-2 border rounded">
+              <option value="">Select mood...</option>
+              ${Object.keys(MOOD_FOOD_SUGGESTIONS).map(key => `<option value="${key}" ${entry.mood === key ? "selected" : ""}>${key.charAt(0).toUpperCase() + key.slice(1)}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Craving</label>
+            <select id="editCraving" class="w-full p-2 border rounded">
+              <option value="">Select craving...</option>
+              <option value="sweet" ${entry.craving === "sweet" ? "selected" : ""}>Sweet</option>
+              <option value="salty" ${entry.craving === "salty" ? "selected" : ""}>Salty</option>
+              <option value="comfort" ${entry.craving === "comfort" ? "selected" : ""}>Comfort</option>
+              <option value="fresh" ${entry.craving === "fresh" ? "selected" : ""}>Fresh</option>
+              <option value="protein" ${entry.craving === "protein" ? "selected" : ""}>Protein</option>
+              <option value="carbs" ${entry.craving === "carbs" ? "selected" : ""}>Carbs</option>
+              <option value="spicy" ${entry.craving === "spicy" ? "selected" : ""}>Spicy</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Symptoms</label>
+            <div class="flex flex-wrap gap-1 text-xs" id="modalSymptoms">${SYMPTOM_OPTIONS.map(symptom => `
+              <label class="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded">
+                <input type="checkbox" value="${symptom}" ${entry.symptoms?.includes(symptom) ? "checked" : ""}/>
+                ${symptom}
+              </label>`).join("")}
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Notes</label>
+            <textarea id="editNote" class="w-full border rounded p-2 text-sm" rows="3" placeholder="How are you feeling today?">${entry.symptomNote || ""}</textarea>
+          </div>
+          <div class="flex gap-3 justify-end pt-2">
+            <button onclick="deleteEntry('${iso}');document.body.removeChild(this.closest('.fixed'))" class="px-3 py-1 text-red-700 bg-red-100 rounded">Delete</button>
+            <button onclick="saveEditLog('${iso}', this.closest('.fixed'))" class="px-4 py-2 bg-pink-500 text-white rounded">Save</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+    function saveEditLog(iso, modal) {
+      entries[iso] = entries[iso] || {};
+      entries[iso].period = document.getElementById("periodCheckbox").checked;
+      entries[iso].mood = document.getElementById("editMood").value;
+      entries[iso].craving = document.getElementById("editCraving").value;
+      const checked = Array.from(document.querySelectorAll("#modalSymptoms input:checked")).map(inp => inp.value);
+      entries[iso].symptoms = checked;
+      entries[iso].symptomNote = document.getElementById("editNote").value.trim();
+      saveState();
+      renderAll();
+      document.body.removeChild(modal);
+    }
+    function deleteEntry(iso) { delete entries[iso]; saveState(); renderAll(); }
+
+    function drawCharts() { drawMoodTrends(); drawCycleChart(); drawPredictChart(); drawSymptomChart(); drawEnergyTrend(); }
+    function drawMoodTrends() {
+      const ctx = document.getElementById("moodTrendChart").getContext("2d");
+      const days = Object.keys(entries).filter(k => entries[k].mood).sort().slice(-14);
+      const labels = days.map(d => prettyDate(d).split(",")[0]);
+      const moodMap = { energetic: 5, happy: 4.5, creative: 4.5, neutral: 3, anxious: 2, irritable: 2, tired: 1.5, bloated: 1.5 };
+      const moodData = days.map(d => moodMap[entries[d].mood] || 3);
+      if (window.moodTrendChartObj) window.moodTrendChartObj.destroy();
+      window.moodTrendChartObj = new Chart(ctx, {
+        type:"line",
+        data:{ labels, datasets:[{ label:"Mood Level", data:moodData, backgroundColor:"rgba(244,114,182,0.2)", borderColor:"#ec4899", tension:0.35, fill:true }] },
+        options:{ scales:{ y:{ min:0, max:5, ticks:{ stepSize:1 } } }, plugins:{ legend:{ display:false } } }
+      });
+    }
+    function drawEnergyTrend() {
+      const ctx = document.getElementById("energyTrendChart").getContext("2d");
+      const days = Object.keys(entries).filter(k => entries[k].energy).sort().slice(-14);
+      const labels = days.map(d => prettyDate(d).split(",")[0]);
+      const energyData = days.map(d => entries[d].energy || 3);
+      if (window.energyTrendChartObj) window.energyTrendChartObj.destroy();
+      window.energyTrendChartObj = new Chart(ctx, {
+        type:"bar",
+        data:{ labels, datasets:[{ data:energyData, backgroundColor:"#38bdf8" }] },
+        options:{ scales:{ y:{ min:0, max:5, ticks:{ stepSize:1 } } }, plugins:{ legend:{ display:false } } }
+      });
+    }
+    function drawCycleChart() {
+      const ctx = document.getElementById("cycleChart").getContext("2d");
+      const periodDates = Object.keys(entries).filter(k => entries[k].period).sort();
+      const diffs = [];
+      for (let i = 1; i < periodDates.length; i++) {
+        const diff = (new Date(periodDates[i]) - new Date(periodDates[i - 1])) / (1000 * 60 * 60 * 24);
+        diffs.push(diff);
+      }
+      if (window.cycleChartObj) window.cycleChartObj.destroy();
+      window.cycleChartObj = new Chart(ctx, {
+        type:"bar",
+        data:{ labels:periodDates.slice(1).map(d => prettyDate(d).split(",")[0]), datasets:[{ label:"Cycle Length (days)", data:diffs, backgroundColor:"#22d3ee" }] },
+        options:{ scales:{ y:{ min:20, max:40 } }, plugins:{ legend:{ display:false } } }
+      });
+    }
+    function drawPredictChart() {
+      const ctx = document.getElementById("predictChart").getContext("2d");
+      const counts = { menstrual:0, follicular:0, ovulation:0, luteal:0 };
+      Object.keys(entries).forEach(iso => {
+        const phase = getPhaseInfo(iso).phase;
+        if (counts[phase] !== undefined) counts[phase]++;
+      });
+      if (window.predictChartObj) window.predictChartObj.destroy();
+      window.predictChartObj = new Chart(ctx, {
+        type:"doughnut",
+        data:{ labels:Object.keys(counts).map(k => PHASE_LABEL[k]), datasets:[{ data:Object.values(counts), backgroundColor:Object.values(PHASE_COLORS) }] },
+        options:{ plugins:{ legend:{ position:"bottom" } } }
+      });
+    }
+    function drawSymptomChart() {
+      const ctx = document.getElementById("symptomChart").getContext("2d");
+      const symptomCounts = {};
+      Object.values(entries).forEach(entry => {
+        entry.symptoms?.forEach(symptom => { symptomCounts[symptom] = (symptomCounts[symptom] || 0) + 1; });
+      });
+      const labels = Object.keys(symptomCounts);
+      const data = labels.map(l => symptomCounts[l]);
+      if (window.symptomChartObj) window.symptomChartObj.destroy();
+      window.symptomChartObj = new Chart(ctx, {
+        type:"radar",
+        data:{ labels, datasets:[{ label:"Symptom Frequency", data, backgroundColor:"rgba(129,140,248,0.25)", borderColor:"#6366f1" }] },
+        options:{ scales:{ r:{ beginAtZero:true, suggestedMax:5 } } }
+      });
+    }
+
+    function renderPredictions() {
+      const predictionDiv = document.getElementById("symptomForecast");
+      const predList = document.getElementById("symptomPredictionList");
+      predictionDiv.textContent = ""; predList.innerHTML = "";
+      const lastCycles = Object.keys(entries).filter(iso => entries[iso].symptoms?.length).sort((a,b) => new Date(b) - new Date(a)).slice(30);
+      if (!lastCycles.length) { predictionDiv.textContent = "Log more symptoms to unlock personalized predictions."; return; }
+      const phase = getTodayPhase();
+      const currentInfo = getPhaseInfo(getTodayISO());
+      const byPhase = {};
+      lastCycles.forEach(iso => {
+        const info = getPhaseInfo(iso);
+        const key = `${info.phase}_${info.dayOfCycle}`;
+        byPhase[key] = byPhase[key] || [];
+        byPhase[key].push(...(entries[iso].symptoms || []));
+      });
+      const key = `${phase}_${currentInfo.dayOfCycle}`;
+      const symptoms = byPhase[key] || [];
+      const freq = {};
+      symptoms.forEach(symptom => freq[symptom] = (freq[symptom] || 0) + 1);
+      const ranked = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0,3);
+      if (ranked.length) {
+        predictionDiv.textContent = `Based on similar cycle days, you may notice: ${ranked.map(([sym, count]) => `${sym} (${count})`).join(", ")}.`;
+        ranked.forEach(([sym]) => { const li = document.createElement("li"); li.textContent = `• ${sym}`; predList.appendChild(li); });
+      } else {
+        predictionDiv.textContent = "Not enough data points for symptom predictions.";
+      }
+    }
+
+    function showSetupModal() { document.getElementById("setupModal").classList.remove("hidden"); }
+    function hideSetupModal() { document.getElementById("setupModal").classList.add("hidden"); }
+    function saveSetup() {
+      const val = document.getElementById("startDateInput").value;
+      const length = parseInt(document.getElementById("cycleLengthInput").value || `${DEFAULT_CYCLE_LENGTH}`, 10);
+      if (!val) return alert("Please select a start date.");
+      startDate = val;
+      cycleLength = Math.max(20, Math.min(40, length));
+      // persist to user profile if logged in
+      const u = getCurrentUser();
+      if (u) { u.cycleStart = startDate; u.cycleLength = cycleLength; users[u.email] = u; saveAuth(); }
+      saveState();
+      hideSetupModal();
+      renderAll();
+    }
+    function quickAddPeriod() {
+      const iso = getTodayISO();
+      entries[iso] = entries[iso] || {};
+      entries[iso].period = !entries[iso].period;
+      saveState();
+      renderAll();
+    }
+
+    function toggleDarkMode() { darkMode = !darkMode; saveState(); applyDarkMode(); }
+    function applyDarkMode() { document.body.classList.toggle("dark-mode", darkMode); }
+
+    function sendPartnerAlert(type) {
+      const u = getCurrentUser(); if (!u || !u.partner?.optIn) return alert("Partner alerts are disabled.");
+      const phase = getTodayPhase();
+      const msg = type === "period" ? `Heads up: period window is approaching or active (${PHASE_LABEL[phase]} phase).` : `Fertile window predicted soon during ${PHASE_LABEL[phase]} phase.`;
+      alert(`Partner notified: ${msg}`);
+    }
+    function showPartnerModal() {
+      document.getElementById("partnerModal").classList.remove("hidden");
+      const phase = getTodayPhase();
+      document.getElementById("partnerPhaseInfo").textContent = `Current phase: ${PHASE_LABEL[phase]}`;
+      const u = getCurrentUser();
+      document.getElementById("partnerAlertStatus").innerHTML = u?.partner?.optIn ? "Partner alerts: On" : "Partner alerts: Off";
+      const list = document.getElementById("partnerUpcomingAlerts"); list.innerHTML = "";
+      if (startDate) {
+        const todayInfo = getPhaseInfo(getTodayISO());
+        const daysToPeriod = cycleLength - todayInfo.idx - 1;
+        const li = document.createElement("li"); li.textContent = `Next period notification in ~${daysToPeriod} days.`; list.appendChild(li);
+        const fertilityLi = document.createElement("li"); fertilityLi.textContent = `Fertility window notification in ~${Math.max(0, 12 - todayInfo.idx)} days.`; list.appendChild(fertilityLi);
+      }
+    }
+    function hidePartnerModal() { document.getElementById("partnerModal").classList.add("hidden"); }
+    function simulatePartnerNotify() { document.getElementById("partnerNotificationMsg").textContent = "Partner notified 💙"; setTimeout(() => document.getElementById("partnerNotificationMsg").textContent = "", 2500); }
+
+    function clearAll() {
+      if (confirm("Clear all entries and start fresh?")) {
+        entries = {}; customFoods = {}; startDate = null; cycleLength = DEFAULT_CYCLE_LENGTH; streakCount = 0; achievements = [];
+        saveState(); renderAll();
+      }
+    }
+    function exportHistoryCSV() {
+      const rows = ["Date,Phase,Period,Mood,Craving,Symptoms,Note"];
+      Object.keys(entries).forEach(k => {
+        const e = entries[k];
+        const phase = getPhaseInfo(k).phase;
+        const note = (e.symptomNote || "").replace(/"/g, '""');
+        rows.push(`"${prettyDate(k)}","${phase}","${e.period ? "Yes" : "No"}","${e.mood || ""}","${e.craving || ""}","${(e.symptoms || []).join("; ")}","${note}"`);
+      });
+      const csv = rows.join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "cycle_history.csv";
+      document.body.appendChild(a); a.click(); setTimeout(() => document.body.removeChild(a), 1000);
+    }
+
+    function postCommunityMessage() {
+      const msgBox = document.getElementById("communityMessage");
+      const content = msgBox.value.trim();
+      if (!content) return alert("Type a message first.");
+      communityMessages.unshift({ content, date: new Date().toISOString(), mood: entries[getTodayISO()]?.mood || "neutral" });
+      communityMessages = communityMessages.slice(0, 25);
+      msgBox.value = ""; saveState(); renderCommunity();
+    }
+    function renderCommunity() {
+      const feed = document.getElementById("communityFeed");
+      feed.innerHTML = "";
+      if (!communityMessages.length) { feed.innerHTML = '<div class="text-xs text-gray-500 text-center py-4">Be the first to share something today!</div>'; return; }
+      communityMessages.forEach(msg => {
+        const bubble = document.createElement("div");
+        bubble.className = "chat-bubble";
+        bubble.innerHTML = `
+          <div class="flex justify-between text-xs text-slate-500">
+            <span>${new Date(msg.date).toLocaleString()}</span>
+            <span>Mood: ${msg.mood}</span>
+          </div>
+          <div class="text-sm text-slate-800 mt-1">${msg.content}</div>
+        `;
+        feed.appendChild(bubble);
+      });
+      renderBuddies();
+    }
+    function renderBuddies() {
+      const container = document.getElementById("buddyMatches");
+      container.innerHTML = "";
+      const todayPhase = getTodayPhase();
+      const pseudoMatches = [
+        { name:"Alex", phase:todayPhase, overlap:"85%", note:"Loves meditative walks.", goal:"Stress relief" },
+        { name:"Maya", phase:todayPhase, overlap:"78%", note:"Focuses on iron-rich recipes.", goal:"Reduce cramps" },
+        { name:"Zara", phase:todayPhase, overlap:"74%", note:"Evening yoga buddy.", goal:"Improve sleep" }
+      ];
+      pseudoMatches.forEach(match => {
+        const card = document.createElement("div");
+        card.className = "border rounded-xl p-3 space-y-1";
+        card.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="font-semibold">${match.name}</span>
+            <span class="badge">${match.overlap} match</span>
+          </div>
+          <div class="text-xs">Phase: ${PHASE_LABEL[match.phase]}</div>
+          <div class="text-xs text-slate-500">${match.note}</div>
+          <div class="text-xs text-slate-500">Goal: ${match.goal}</div>
+          <button class="mt-2 icon-btn text-xs" onclick="alert('Buddy invitation sent to ${match.name}!')"><i class="fa-solid fa-envelope"></i> Invite</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function toggleNotification(key) {
+      notificationSettings[key] = !notificationSettings[key];
+      saveState();
+    }
+    function refreshAISuggestions() {
+      const container = document.getElementById("aiSuggestions");
+      container.innerHTML = "";
+      const iso = getTodayISO();
+      const entry = entries[iso] || {};
+      const suggestions = [];
+      if (entry.symptoms?.includes("Cramps")) suggestions.push("Apply a warm compress and add leafy greens (magnesium boost).");
+      if (entry.symptoms?.includes("Headache")) suggestions.push("Hydrate + include omega-3 sources like salmon or walnuts tonight.");
+      if (entry.craving === "sweet") suggestions.push("Try a dark chocolate chia pudding for iron + comfort.");
+      if (entry.energy <= 2) suggestions.push("Schedule a 15-minute restorative yoga session and earlier bedtime.");
+      if (!suggestions.length) suggestions.push("Keep logging mood & symptoms. We'll surface smarter nudges as data grows.");
+      suggestions.forEach(text => { const p = document.createElement("p"); p.textContent = text; container.appendChild(p); });
+    }
+
+    function updateStreak() {
+      const sorted = Object.keys(entries).sort();
+      let currentStreak = 0; let prevDate = null;
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        const iso = sorted[i];
+        if (!entries[iso].mood && !entries[iso].craving && !entries[iso].symptoms?.length && !entries[iso].period) continue;
+        const d = new Date(iso);
+        if (!prevDate) { prevDate = d; currentStreak = 1; }
+        else {
+          const diff = (prevDate - d) / (1000 * 60 * 60 * 24);
+          if (diff === 1) { currentStreak++; prevDate = d; }
+          else if (diff > 1) break;
+        }
+      }
+      streakCount = Math.max(streakCount, currentStreak);
+      document.getElementById("streakCount").textContent = currentStreak;
+      saveState();
+      return currentStreak;
+    }
+    function renderAchievements() {
+      const currentStreak = updateStreak();
+      const iso = getTodayISO();
+      const entry = entries[iso] || {};
+      const newAchievements = [];
+      if (currentStreak >= 7 && !achievements.includes("Streak7")) newAchievements.push("Streak7");
+      if (entry.symptoms?.length >= 3 && !achievements.includes("SymptomPro")) newAchievements.push("SymptomPro");
+      if (entry.eaten && Object.values(entry.eaten).some(m => Object.keys(m.foods || {}).length >= 3) && !achievements.includes("MealMaster")) newAchievements.push("MealMaster");
+      achievements = Array.from(new Set([...achievements, ...newAchievements]));
+      saveState();
+      const grid = document.getElementById("achievementsGrid");
+      grid.innerHTML = "";
+      achievements.forEach(code => {
+        const card = document.createElement("div");
+        card.className = "achievement-card text-xs";
+        const map = {
+          Streak7:{ title:"Consistency Champ", desc:"Logged 7 days in a row." },
+          SymptomPro:{ title:"Symptom Analyst", desc:"Tracked three symptoms today." },
+          MealMaster:{ title:"Meal Master", desc:"Logged three meals with nutrients." }
+        };
+        const info = map[code];
+        card.innerHTML = `<div class="text-sm font-semibold">${info.title}</div><div>${info.desc}</div>`;
+        grid.appendChild(card);
+      });
+      document.getElementById("activeChallenge").textContent = "Current: 14-day mindfulness challenge (log 5 sessions).";
+      document.getElementById("goalList").innerHTML = `
+        <li>• Log moods 5x this week.</li>
+        <li>• Hit protein target 4 days.</li>
+        <li>• Sleep before 10:30 pm (4 nights).</li>
+      `;
+      document.getElementById("rewardSummary").textContent = "Earn 50 pts for streaks, unlock guided meditations & premium recipes.";
+    }
+
+    function toggleLanguage(lang) { document.documentElement.lang = lang; alert("Multilingual UI coming soon. For now, we’ll adapt content gradually."); }
+
+    function toggleNotificationInputs() {
+      document.getElementById("notifySms").checked = notificationSettings.sms;
+      document.getElementById("notifyMeals").checked = notificationSettings.meals;
+      document.getElementById("notifyWater").checked = notificationSettings.water;
+      document.getElementById("notifyWorkout").checked = notificationSettings.workout;
+    }
+
+    function initVoiceInput() {
+      const btn = document.getElementById("voiceToggleBtn");
+      btn.onclick = () => {
+        if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) { alert("Voice input not supported in this browser."); return; }
+        if (voiceActive) { speechRecognition.stop(); return; }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        speechRecognition = new SpeechRecognition();
+        speechRecognition.lang = "en-US"; speechRecognition.interimResults = false; speechRecognition.maxAlternatives = 1;
+        speechRecognition.onstart = () => { voiceActive = true; btn.classList.add("voice-active"); btn.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>'; };
+        speechRecognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          document.getElementById("symptomNote").value += (document.getElementById("symptomNote").value ? " " : "") + transcript;
+          handleDailyUpdate();
+        };
+        speechRecognition.onerror = () => { alert("Voice input error, please try again."); };
+        speechRecognition.onend = () => { voiceActive = false; btn.classList.remove("voice-active"); btn.innerHTML = '<i class="fa-solid fa-microphone"></i>'; };
+        speechRecognition.start();
+      };
+    }
+
+    function renderNotifications() { toggleNotificationInputs(); refreshAISuggestions(); }
+
+    function toggleProfileMenu(){
+      document.getElementById("profileDropdown").classList.toggle("hidden");
+    }
+    window.addEventListener("click", (e) => {
+      const menu = document.getElementById("profileDropdown");
+      const btn = document.querySelector("#profileMenu > button");
+      if (!menu || !btn) return;
+      if (!btn.contains(e.target) && !menu.contains(e.target)) menu.classList.add("hidden");
+    });
+
+    function renderAll() {
+      applyDarkMode();
+      renderProgressBar();
+      renderCurrentPhase();
+      renderCalendar();
+      renderNutritionPlanner();
+      renderPhaseTips();
+      renderHistory();
+      drawCharts();
+      renderCommunity();
+      renderNotifications();
+      renderAchievements();
+      updateMoodInsights();
+    }
+
+    document.getElementById("languageSelector").addEventListener("change", event => { toggleLanguage(event.target.value); });
+
+    window.onload = function() {
+      loadAuth();
+      loadState();
+      initVoiceInput();
+      toggleUIForAuth();
+      if (getCurrentUser()) {
+        const today = getTodayISO();
+        renderAll();
+        renderSymptomSection();
+        if (entries[today]?.mood) document.getElementById("moodSelector").value = entries[today].mood;
+        if (entries[today]?.craving) document.getElementById("cravingSelector").value = entries[today].craving;
+        document.getElementById("energySlider").value = entries[today]?.energy || 3;
+        document.getElementById("symptomNote").value = entries[today]?.symptomNote || "";
+        updateMoodInsights();
+      }
+    };
+  </script>
+</body>
+</html>
